@@ -7,7 +7,7 @@ class Cosine
 public:
   Cosine() = default;
   template<typename PtrA, typename PtrB>
-  static double eval(const PtrA* a, const PtrB* b, const uint32_t size)
+  static double eval(const PtrA* a, const PtrB* b, const size_t size)
   {
     double dot{.0};
     double lenA{.0};
@@ -28,5 +28,4 @@ public:
     return sim;
   }
 };
-
 }

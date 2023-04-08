@@ -15,7 +15,7 @@
 
 namespace helpers
 {
-  void print_omp_info()
+  inline void print_omp_info()
   {
     std::cout << "Processors num: " << omp_get_num_procs() << std::endl;
     std::cout << "Max threads num: " << omp_get_max_threads() << std::endl;

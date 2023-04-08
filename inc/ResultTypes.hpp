@@ -9,7 +9,7 @@ namespace data_types
   namespace
   {
     template <typename T>
-    struct pair_less
+    struct PairSecondLess
     {
       bool operator()(const T &a, const T &b) const
       {
@@ -19,7 +19,7 @@ namespace data_types
   }
 
   using ResultPair = std::pair<size_t, double>;
-  using ResultSet = std::set<ResultPair, pair_less<ResultPair>>;
+  using ResultSet = std::set<ResultPair, PairSecondLess<ResultPair>>;
 
   using ResultTuple = std::tuple<size_t, size_t, double>;
   using ResultVector = std::vector<ResultTuple>;

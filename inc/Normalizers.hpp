@@ -12,7 +12,7 @@ namespace normalizers
     {
       data_types::Matrix<T> result{data.n_rows(), data.n_cols()};
       const T min{data.min_value()};
-      const T delta{data.max_value() - min};
+      const T delta{static_cast<T> (data.max_value() - min)};
 
       for (size_t i = 0u; i < result.size(); ++i)
       {

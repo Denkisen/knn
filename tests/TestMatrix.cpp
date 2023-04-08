@@ -1,193 +1,243 @@
 #include <gtest/gtest.h>
 #include "helpers.hpp"
 #include "Matrix.hpp"
+#include "test_helpers.hpp"
 
-using namespace data_types;
-
-TEST (Matrix, constructors)
+namespace testing
 {
-  Matrix<double> a;
-  EXPECT_EQ(a.size(), 0u);
-  EXPECT_EQ(a.n_cols(), 0u);
-  EXPECT_EQ(a.n_rows(), 0u);
+  using namespace data_types;
 
-  Matrix<double> b{10u, 8u};
-  EXPECT_EQ(b.size(), 10u * 8u);
-  EXPECT_EQ(b.n_rows(), 10u);
-  EXPECT_EQ(b.n_cols(), 8u);
-
-  Matrix<double> c{b};
-  EXPECT_EQ(c.size(), 10u * 8u);
-  EXPECT_EQ(c.n_rows(), 10u);
-  EXPECT_EQ(c.n_cols(), 8u);
-
-  Matrix<double> d{std::move(c)};
-  EXPECT_EQ(d.size(), 10u * 8u);
-  EXPECT_EQ(d.n_rows(), 10u);
-  EXPECT_EQ(d.n_cols(), 8u);
-
-  std::vector<uint8_t> v1(10u, 2u);
-  Matrix<uint8_t> e{5u, 2u, v1};
-  EXPECT_EQ(e.size(), 5u * 2u);
-  EXPECT_EQ(e.n_rows(), 5u);
-  EXPECT_EQ(e.n_cols(), 2u);
-  for (uint32_t i = 0u; i < 5u; ++i)
+  template <typename T>
+  void checkDims(const Matrix<T> &obj, const size_t rows, const size_t cols)
   {
-    for (uint32_t j = 0u; j < 2u; ++j)
+    EXPECT_EQ(obj.size(), cols * rows);
+    EXPECT_EQ(obj.n_cols(), cols);
+    EXPECT_EQ(obj.n_rows(), rows);
+  }
+
+  template<typename T>
+  void checkMatrixData(const Matrix<T> &obj, const std::vector<T> &data)
+  {
+    EXPECT_EQ(obj.size(), data.size());
+    EXPECT_EQ(obj.n_cols() * obj.n_rows(), data.size());
+
+    for (uint32_t i = 0u; i < obj.size(); ++i)
     {
-      EXPECT_EQ(e.at(i, j), 2u);
+      EXPECT_EQ(obj.at(i), data.at(i));
     }
   }
 
-  Matrix<uint8_t> f{5u, 2u, std::move(v1)};
-  EXPECT_EQ(f.size(), 5u * 2u);
-  EXPECT_EQ(f.n_rows(), 5u);
-  EXPECT_EQ(f.n_cols(), 2u);
-  for (uint32_t i = 0u; i < 5u; ++i)
+  template<typename T>
+  void checkMatrixData(const Matrix<T> &obj, const std::vector<std::vector<T>> &data)
   {
-    for (uint32_t j = 0u; j < 2u; ++j)
+    EXPECT_EQ(obj.size(), data.size() * data.at(0u).size());
+    EXPECT_EQ(obj.n_cols() * obj.n_rows(), data.size() * data.at(0u).size());
+
+    for (uint32_t i = 0u; i < obj.n_rows(); ++i)
     {
-      EXPECT_EQ(f.at(i, j), 2u);
+      for (uint32_t j = 0u; j < obj.n_cols(); ++j)
+      {
+        EXPECT_EQ(obj.at(i, j), data.at(i).at(j));
+      }
     }
   }
 
-  std::vector<std::vector<uint8_t>> v2;
-  v2.resize(10u, std::vector<uint8_t>(5u, 4u));
-
-  Matrix<uint8_t> g{v2};
-  EXPECT_EQ(g.size(), 10u * 5u);
-  EXPECT_EQ(g.n_rows(), 10u);
-  EXPECT_EQ(g.n_cols(), 5u);
-
-  for (uint32_t i = 0u; i < 10u; ++i)
+  struct TestConstructors
   {
-    for (uint32_t j = 0u; j < 5u; ++j)
+    template <typename T>
+    static void test()
     {
-      EXPECT_EQ(g.at(i, j), 4u);
+      using type_name = T;
+      const size_t rows{10u};
+      const size_t cols{5u};
+      Matrix<type_name> a;
+      checkDims(a, 0u, 0u);
+
+      Matrix<type_name> b{rows, cols};
+      checkDims(b, rows, cols);
+
+      Matrix<type_name> c{b};
+      checkDims(c, rows, cols);
+
+      Matrix<type_name> d{std::move(c)};
+      checkDims(d, rows, cols);
+
+      std::vector<type_name> v1{test_helpers::randomVector<type_name>(rows * cols)};
+      Matrix<type_name> e{rows, cols, v1};
+      checkDims(e, rows, cols);
+      checkMatrixData(e, v1);
+
+      std::vector<type_name> v1_copy{v1};
+      Matrix<type_name> f{rows, cols, std::move(v1_copy)};
+      checkDims(f, rows, cols);
+      checkMatrixData(f, v1);
+
+      std::vector<std::vector<type_name>> v2{test_helpers::randomVector<type_name>(rows, cols)};
+
+      Matrix<type_name> g{v2};
+      checkDims(g, rows, cols);
+      checkMatrixData(g, v2);
     }
-  }
-}
+  };
 
-TEST (Matrix, assignOperators)
-{
-  Matrix<double> a{10u, 8u};
-  Matrix<double> b;
-  Matrix<double> c;
-  b = a;
-  EXPECT_EQ(b.size(), 10u * 8u);
-  EXPECT_EQ(b.n_rows(), 10u);
-  EXPECT_EQ(b.n_cols(), 8u);
-
-  c = std::move(a);
-  EXPECT_EQ(c.size(), 10u * 8u);
-  EXPECT_EQ(c.n_rows(), 10u);
-  EXPECT_EQ(c.n_cols(), 8u);
-}
-
-TEST (Matrix, mathOperators)
-{
-  const auto rows = 1000u;
-  const auto cols = 1000u;
-  std::vector<std::vector<uint32_t>> v1;
-  v1.resize(rows, std::vector<uint32_t>(cols, 0u));
-  std::vector<std::vector<uint32_t>> v2;
-  v2.resize(rows, std::vector<uint32_t>(cols, 0u));
-  for (uint32_t i = 0u; i < rows; ++i)
+  TEST(TestMatrix, constructors)
   {
-    for (uint32_t j = 0u; j < cols; ++j)
-    {
-      v1.at(i).at(j) = i * j;
-      v2.at(i).at(j) = i * j;
-    }
+    test_helpers::cycleTypes<TestConstructors>();
   }
-  
-  Matrix<uint32_t> a{rows, cols};
-  Matrix<uint32_t> b{rows, cols};
 
-  helpers::bench("Fill bench", [&]() {
-    a.fill(v1);
-  });
-
-  b.fill(v2);
-
-  helpers::bench("Sum bench", [&]() {
-    a = a + b;
-  });
-
-  for (uint32_t i = 0u; i < rows; ++i)
+  struct TestAssignOperators
   {
-    for (uint32_t j = 0u; j < cols; ++j)
+    template <typename T>
+    static void test()
     {
-      EXPECT_EQ(a.at(i,j), 2 * i * j);
-    }
-  }
-}
+      using type_name = T;
+      const size_t rows{10u};
+      const size_t cols{5u};
+      std::vector<type_name> v1{test_helpers::randomVector<type_name>(rows * cols)};
+      Matrix<type_name> a{rows, cols, v1};
+      Matrix<type_name> b;
+      Matrix<type_name> c;
+      b = a;
+      checkDims(b, rows, cols);
+      checkMatrixData(b, v1);
 
-TEST (Matrix, fill)
-{
-  const auto rows = 10u;
-  const auto cols = 5u;
-  std::vector<std::vector<uint8_t>> v;
-  v.resize(rows, std::vector<uint8_t>(cols, 0u));
-  for (uint32_t i = 0u; i < rows; ++i)
+      c = std::move(a);
+      checkDims(c, rows, cols);
+      checkMatrixData(c, v1);
+    }
+  };
+
+  TEST(TestMatrix, assignOperators)
   {
-    for (uint32_t j = 0u; j < cols; ++j)
-    {
-      v.at(i).at(j) = i * j;
-    }
+    test_helpers::cycleTypes<TestAssignOperators>();
   }
-  Matrix<uint8_t> a{rows, cols};
-  EXPECT_EQ(a.size(), rows * cols);\
 
-  a.fill(v);
-
-  for (uint32_t i = 0u; i < rows; ++i)
+  struct TestMathOperators
   {
-    for (uint32_t j = 0u; j < cols; ++j)
+    template <typename T>
+    static void test()
     {
-      EXPECT_EQ(a.at(i, j), i * j);
+      using type_name = T;
+      const auto rows{1000u};
+      const auto cols{1000u};
+      std::vector<std::vector<type_name>> v1{test_helpers::randomVector<type_name>(rows, cols)};
+      std::vector<std::vector<type_name>> v2{test_helpers::randomVector<type_name>(rows, cols)};
+
+      Matrix<type_name> a{v1};
+      Matrix<type_name> b{v2};
+      checkDims(a, rows, cols);
+      checkDims(b, rows, cols);
+
+      helpers::bench("Sum bench", [&]()
+                     { a = a + b; });
+
+      for (size_t i = 0u; i < rows; ++i)
+      {
+        for (size_t j = 0u; j < cols; ++j)
+        {
+          EXPECT_EQ(a.at(i, j), v1.at(i).at(j) + v2.at(i).at(j));
+        }
+      }
     }
-  }
-}
+  };
 
-TEST (Matrix, resize)
-{
-  const auto rows = 10u;
-  const auto cols = 5u;
-  Matrix<uint8_t> a{rows, cols};
-  EXPECT_EQ(a.size(), rows * cols);
-  a.resize(5u, 12u);
-  EXPECT_EQ(a.size(), 5u * 12u);
-  EXPECT_EQ(a.n_rows(), 5u);
-  EXPECT_EQ(a.n_cols(), 12u);
-}
-
-TEST (Matrix, findMinMaxValue)
-{
-  const auto rows = 1000u;
-  const auto cols = 1000u;
-  std::vector<std::vector<uint32_t>> v1;
-  v1.resize(rows, std::vector<uint32_t>(cols, 0u));
-  uint32_t k{10u};
-  for (uint32_t i = 0u; i < rows; ++i)
+  TEST(TestMatrix, mathOperators)
   {
-    for (uint32_t j = 0u; j < cols; ++j)
-    {
-      v1.at(i).at(j) = k++;
-    }
+    test_helpers::cycleTypes<TestMathOperators>();
   }
-  
-  Matrix<uint32_t> a{rows, cols};
-  a.fill(v1);
-  uint32_t min_val{0u};
-  helpers::bench("MinValue", [&]() {
-    min_val = a.min_value();
-  });
-  EXPECT_EQ(min_val, 10u);
 
-  uint32_t max_val{0u};
-  helpers::bench("MaxValue", [&]() {
-    max_val = a.max_value();
-  });
-  EXPECT_EQ(max_val, k - 1);
+  struct TestFill
+  {
+    template <typename T>
+    static void test()
+    {
+      using type_name = T;
+      const auto rows{10u};
+      const auto cols{5u};
+      std::vector<std::vector<type_name>> v1{test_helpers::randomVector<type_name>(rows, cols)};
+
+      Matrix<type_name> a{v1};
+      checkDims(a, rows, cols);
+      a.fill(v1);
+      checkMatrixData(a, v1);
+    }
+  };
+
+  TEST(TestMatrix, fill)
+  {
+    test_helpers::cycleTypes<TestFill>();
+  }
+
+  struct TestResize
+  {
+    template <typename T>
+    static void test()
+    {
+      using type_name = T;
+      const auto rows{10u};
+      const auto cols{5u};
+      Matrix<type_name> a{rows, cols};
+      EXPECT_EQ(a.size(), rows * cols);
+      checkDims(a, rows, cols);
+      a.resize(5u, 12u);
+      checkDims(a, 5u, 12u);
+    }
+  };
+
+  TEST(TestMatrix, resize)
+  {
+    test_helpers::cycleTypes<TestResize>();
+  }
+
+  struct TestMinMaxValues
+  {
+    template <typename T>
+    static void test()
+    {
+      using type_name = T;
+      const auto rows{1000u};
+      const auto cols{1000u};
+      std::vector<type_name> v1{test_helpers::randomVector<type_name>(rows * cols)};
+      Matrix<type_name> a{rows, cols, v1};
+      checkDims(a, rows, cols);
+
+      type_name min_val{0u};
+      helpers::bench("MinValue", [&]()
+                     { min_val = a.min_value(); });
+      EXPECT_EQ(min_val, *std::min_element(v1.begin(), v1.end()));
+
+      type_name max_val{0u};
+      helpers::bench("MaxValue", [&]()
+                     { max_val = a.max_value(); });
+      EXPECT_EQ(max_val, *std::max_element(v1.begin(), v1.end()));
+    }
+  };
+
+  TEST(TestMatrix, findMinMaxValue)
+  {
+    test_helpers::cycleTypes<TestMinMaxValues>();
+  }
+
+  struct TestRawData
+  {
+    template <typename T>
+    static void test()
+    {
+      using type_name = T;
+      const auto rows{1000u};
+      const auto cols{1000u};
+      std::vector<type_name> v1{test_helpers::randomVector<type_name>(rows * cols)};
+      Matrix<type_name> a{rows, cols, v1};
+      checkDims(a, rows, cols);
+      for (size_t i = 0u; i < v1.size(); ++i)
+      {
+        EXPECT_EQ(a.raw_data()[i], v1.at(i));
+      }
+    }
+  };
+
+  TEST(TestMatrix, rawData)
+  {
+    test_helpers::cycleTypes<TestRawData>();
+  }
 }
