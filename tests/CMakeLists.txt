@@ -6,6 +6,7 @@ set(SOURCES
   "TestMatrix.cpp"
   "TestMetrics.cpp"
   "TestNormalizers.cpp"
+  "TestKnn.cpp"
 )
 
 include(GoogleTest)

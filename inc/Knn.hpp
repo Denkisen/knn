@@ -25,7 +25,7 @@ namespace models
       features = normalizer::eval(data);
     }
 
-    data_types::ResultSet find(const size_t index, const size_t max_neighbors = 1, const float threshold = 0.5f)
+    data_types::ResultSet find(const size_t index, const size_t max_neighbors, const float threshold)
     {
       data_types::ResultSet result{};
       for (size_t i = 0u; i < features.n_rows(); ++i)
@@ -45,7 +45,7 @@ namespace models
       return result;
     }
 
-    data_types::ResultMap find(const size_t max_neighbors = 1, const float threshold = 0.5f)
+    data_types::ResultMap find(const size_t max_neighbors, const float threshold)
     {
       std::vector<data_types::ResultMap> results{static_cast<size_t>(omp_get_num_procs())};
       #pragma omp parallel for default(shared)
@@ -68,6 +68,8 @@ namespace models
 
       return result;
     }
+
+    const auto &getFeatures() const { return features; }
 
   private:
     data_types::Matrix<elem_type> features;

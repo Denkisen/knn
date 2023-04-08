@@ -21,9 +21,6 @@ namespace data_types
   using ResultPair = std::pair<size_t, double>;
   using ResultSet = std::set<ResultPair, PairSecondLess<ResultPair>>;
 
-  using ResultTuple = std::tuple<size_t, size_t, double>;
-  using ResultVector = std::vector<ResultTuple>;
-
   using ResultMapKey = std::pair<size_t, size_t>;
   using ResultMap = std::map<ResultMapKey, double>;
 }
